@@ -1,0 +1,25 @@
+# High-Speed Columnar Data & Fast Parquet I/O
+duckdb>=1.0.0
+polars>=1.0.0
+pyarrow>=17.0.0
+pandas>=2.2.0
+numpy>=1.26.0
+
+# Scientific & Microstructure Statistics
+scipy>=1.13.0
+statsmodels>=0.14.0
+
+# Fast Tabular Machine Learning (CPU Multi-Threaded)
+lightgbm>=4.4.0
+xgboost>=2.1.0
+scikit-learn>=1.5.0
+
+# ONNX Model Export Bridge
+onnx>=1.16.0
+onnxmltools>=1.12.0
+skl2onnx>=1.17.0
+onnxruntime>=1.18.0
+
+# Visualization & Reporting
+matplotlib>=3.9.0
+seaborn>=0.13.0
