@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: lob-matrix
+  datasource:
+    url: jdbc:h2:file:./data/db/orderbook_meta;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;AUTO_SERVER=TRUE;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  h2:
+    console:
+      enabled: false
+
+lobmatrix:
+  engine:
+    version: "0.1.0"
+    feed-source: "MOCK" # "MOCK", "ZERODHA", "DHAN"
+  storage:
+    raw-wal-dir: "data/raw"
+    parquet-dir: "data/parquet"
+    models-dir: "data/models"
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    com.lobmatrix: DEBUG
