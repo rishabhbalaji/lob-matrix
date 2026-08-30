@@ -1,5 +1,5 @@
 # Build Artifacts & Bytecode
-target/
+/target/
 *.class
 *.jar
 *.war
