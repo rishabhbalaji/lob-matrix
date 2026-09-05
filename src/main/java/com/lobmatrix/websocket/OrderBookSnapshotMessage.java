@@ -5,6 +5,13 @@ import com.lobmatrix.core.model.CanonicalMarketSnapshot;
 import java.util.List;
 import java.util.stream.IntStream;
 
+/**
+ * Stable dashboard WebSocket message.
+ *
+ * <p>M5P3S2 extends the message with display-ready percentages for the live
+ * depth-imbalance speedometer and Lee-Ready trade-strength gauge. Existing
+ * fields remain unchanged so current dashboard consumers remain compatible.</p>
+ */
 public record OrderBookSnapshotMessage(
         String type,
         String source,
@@ -18,16 +25,28 @@ public record OrderBookSnapshotMessage(
         double midPrice,
         double spread,
         String bookState,
+        double depthImbalancePercent,
+        double tradeStrengthPercent,
         List<OrderBookLevel> bids,
         List<OrderBookLevel> asks
 ) {
     public static OrderBookSnapshotMessage from(CanonicalMarketSnapshot snapshot) {
+        return from(snapshot, LiveDashboardFeatureService.LiveDashboardFeatures.neutral());
+    }
+
+    public static OrderBookSnapshotMessage from(
+            CanonicalMarketSnapshot snapshot,
+            LiveDashboardFeatureService.LiveDashboardFeatures features
+    ) {
         double[] bidPrices = snapshot.bidPrices();
         long[] bidQuantities = snapshot.bidQuantities();
         int[] bidOrders = snapshot.bidOrders();
         double[] askPrices = snapshot.askPrices();
         long[] askQuantities = snapshot.askQuantities();
         int[] askOrders = snapshot.askOrders();
+
+        LiveDashboardFeatureService.LiveDashboardFeatures safeFeatures =
+                features != null ? features : LiveDashboardFeatureService.LiveDashboardFeatures.neutral();
 
         return new OrderBookSnapshotMessage(
                 "orderbook_snapshot",
@@ -42,6 +61,8 @@ public record OrderBookSnapshotMessage(
                 snapshot.midPrice(),
                 snapshot.spread(),
                 snapshot.stateTag().name(),
+                safeFeatures.depthImbalancePercent(),
+                safeFeatures.tradeStrengthPercent(),
                 levels(bidPrices, bidQuantities, bidOrders),
                 levels(askPrices, askQuantities, askOrders)
         );

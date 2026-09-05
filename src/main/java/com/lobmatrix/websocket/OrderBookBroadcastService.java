@@ -11,6 +11,10 @@ import org.springframework.web.socket.WebSocketSession;
 
 import java.io.IOException;
 
+/**
+ * Serializes the latest UI-dispatched market snapshot and broadcasts it to
+ * active browser sessions.
+ */
 @Service
 public class OrderBookBroadcastService {
 
@@ -18,10 +22,16 @@ public class OrderBookBroadcastService {
 
     private final OrderBookWebSocketHandler handler;
     private final ObjectMapper objectMapper;
+    private final LiveDashboardFeatureService liveDashboardFeatureService;
 
-    public OrderBookBroadcastService(OrderBookWebSocketHandler handler, ObjectMapper objectMapper) {
+    public OrderBookBroadcastService(
+            OrderBookWebSocketHandler handler,
+            ObjectMapper objectMapper,
+            LiveDashboardFeatureService liveDashboardFeatureService
+    ) {
         this.handler = handler;
         this.objectMapper = objectMapper;
+        this.liveDashboardFeatureService = liveDashboardFeatureService;
     }
 
     void dispatch(CanonicalMarketSnapshot snapshot) {
@@ -31,9 +41,14 @@ public class OrderBookBroadcastService {
 
         final String payload;
         try {
-            payload = objectMapper.writeValueAsString(OrderBookSnapshotMessage.from(snapshot));
+            LiveDashboardFeatureService.LiveDashboardFeatures features =
+                    liveDashboardFeatureService.calculate(snapshot);
+            payload = objectMapper.writeValueAsString(OrderBookSnapshotMessage.from(snapshot, features));
         } catch (JsonProcessingException exception) {
-            log.error("Unable to serialize order book snapshot for token={}", snapshot.instrumentToken(), exception);
+            log.error("Unable to serialize order book snapshot for token {}", snapshot.instrumentToken(), exception);
+            return;
+        } catch (RuntimeException exception) {
+            log.error("Unable to calculate dashboard features for token {}", snapshot.instrumentToken(), exception);
             return;
         }
 
@@ -52,7 +67,7 @@ public class OrderBookBroadcastService {
                 }
             } catch (IOException | RuntimeException exception) {
                 handler.sessions().remove(session);
-                log.warn("Unable to deliver order book update to session={}; removing session",
+                log.warn("Unable to deliver order book update to session {}; removing session",
                         session.getId(), exception);
             }
         }
