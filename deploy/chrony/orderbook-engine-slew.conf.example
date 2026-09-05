@@ -1,0 +1,13 @@
+# Optional M6P1S1 Chrony drop-in.
+#
+# Ubuntu's standard /etc/chrony/chrony.conf commonly already contains:
+#   rtcsync
+#   makestep 1 3
+#
+# Install this drop-in only if your host does not already have an equivalent
+# startup-only makestep policy. Do not run multiple competing NTP clients.
+#
+# Normal Chrony corrections are slewed. Allow a step only early in startup,
+# if the offset exceeds one second, limited to the first three updates.
+makestep 1.0 3
+rtcsync
