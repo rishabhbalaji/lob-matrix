@@ -1,7 +1,7 @@
 package com.lobmatrix.config;
 
 import com.lobmatrix.core.adapter.MockMarketReplayFeeder;
-import com.lobmatrix.websocket.OrderBookBroadcastService;
+import com.lobmatrix.websocket.UiFrameDispatcher;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,10 +21,10 @@ public class MockFeedConfiguration {
 
     @Bean(destroyMethod = "disconnect")
     public MockMarketReplayFeeder dashboardMockMarketReplayFeeder(
-            OrderBookBroadcastService orderBookBroadcastService
+            UiFrameDispatcher uiFrameDispatcher
     ) {
         MockMarketReplayFeeder feeder = new MockMarketReplayFeeder();
-        feeder.registerListener(orderBookBroadcastService::broadcast);
+        feeder.registerListener(uiFrameDispatcher::publish);
         feeder.subscribe(Set.of(DASHBOARD_TOKEN));
         feeder.connect();
         return feeder;

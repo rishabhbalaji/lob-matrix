@@ -17,7 +17,7 @@ import static org.mockito.Mockito.when;
 class OrderBookBroadcastServiceTest {
 
     @Test
-    void sendsSerializedSnapshotToOpenSession() throws IOException {
+    void dispatchSendsSerializedSnapshotToOpenSession() throws IOException {
         OrderBookWebSocketHandler handler = new OrderBookWebSocketHandler();
         ObjectMapper objectMapper = new ObjectMapper();
         OrderBookBroadcastService service = new OrderBookBroadcastService(handler, objectMapper);
@@ -26,7 +26,7 @@ class OrderBookBroadcastServiceTest {
         when(session.isOpen()).thenReturn(true);
         handler.sessions().add(session);
 
-        service.broadcast(snapshot());
+        service.dispatch(snapshot());
 
         verify(session).sendMessage(new TextMessage(
                 objectMapper.writeValueAsString(OrderBookSnapshotMessage.from(snapshot()))
@@ -34,7 +34,7 @@ class OrderBookBroadcastServiceTest {
     }
 
     @Test
-    void removesClosedSessionWithoutAttemptingDelivery() {
+    void dispatchRemovesClosedSessionWithoutAttemptingDelivery() {
         OrderBookWebSocketHandler handler = new OrderBookWebSocketHandler();
         OrderBookBroadcastService service = new OrderBookBroadcastService(handler, new ObjectMapper());
 
@@ -42,7 +42,7 @@ class OrderBookBroadcastServiceTest {
         when(session.isOpen()).thenReturn(false);
         handler.sessions().add(session);
 
-        service.broadcast(snapshot());
+        service.dispatch(snapshot());
 
         assertThat(handler.activeSessionCount()).isZero();
     }

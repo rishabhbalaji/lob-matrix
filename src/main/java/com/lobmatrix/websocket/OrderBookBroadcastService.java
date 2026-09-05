@@ -24,7 +24,7 @@ public class OrderBookBroadcastService {
         this.objectMapper = objectMapper;
     }
 
-    public void broadcast(CanonicalMarketSnapshot snapshot) {
+    void dispatch(CanonicalMarketSnapshot snapshot) {
         if (handler.sessions().isEmpty()) {
             return;
         }
