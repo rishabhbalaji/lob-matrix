@@ -1,4 +1,6 @@
 (() => {
+  const DEPTH_ROW_COUNT = 20;
+
   const elements = {
     indicator: document.getElementById("connection-indicator"),
     connectionStatus: document.getElementById("connection-status"),
@@ -48,25 +50,49 @@
     return Number.isFinite(value) ? integerFormatter.format(value) : "—";
   }
 
-  function renderRows(container, levels, side) {
-    const maxQuantity = Math.max(1, ...levels.map(level => level.quantity));
-    container.replaceChildren(...levels.map(level => {
+  function safeQuantity(level) {
+    const quantity = level && Number.isFinite(level.quantity) ? level.quantity : 0;
+    return quantity > 0 ? quantity : 0;
+  }
+
+  function computeMaxQuantity(bidLevels, askLevels) {
+    let max = 0;
+    const bidCount = Math.min(DEPTH_ROW_COUNT, bidLevels.length);
+    for (let i = 0; i < bidCount; i += 1) {
+      max = Math.max(max, safeQuantity(bidLevels[i]));
+    }
+    const askCount = Math.min(DEPTH_ROW_COUNT, askLevels.length);
+    for (let i = 0; i < askCount; i += 1) {
+      max = Math.max(max, safeQuantity(askLevels[i]));
+    }
+    return max > 0 ? max : 1;
+  }
+
+  // Creates DEPTH_ROW_COUNT persistent DOM rows for one side of the ladder.
+  // These nodes are created exactly once and mutated in place on every
+  // subsequent render, so the DOM node count never grows over the app's
+  // lifetime regardless of how many WebSocket frames arrive.
+  function createDepthLadder(container, side) {
+    const fragment = document.createDocumentFragment();
+    const slots = [];
+
+    for (let i = 0; i < DEPTH_ROW_COUNT; i += 1) {
       const row = document.createElement("div");
-      row.className = `book-row ${side}-row`;
+      row.className = `book-row ${side}-row is-empty`;
 
       const depth = document.createElement("div");
       depth.className = "depth";
-      depth.style.width = `${Math.max(4, (level.quantity / maxQuantity) * 100)}%`;
+      depth.style.width = "0%";
 
       const orders = document.createElement("span");
-      orders.textContent = formatInteger(level.orders);
+      orders.textContent = "—";
 
       const quantity = document.createElement("span");
-      quantity.textContent = formatInteger(level.quantity);
+      quantity.textContent = "—";
 
       const price = document.createElement("span");
       price.className = `${side}-price`;
-      price.textContent = formatPrice(level.price);
+      price.textContent = "—";
 
       row.append(depth);
       if (side === "bid") {
@@ -74,9 +100,48 @@
       } else {
         row.append(price, quantity, orders);
       }
-      return row;
-    }));
+
+      fragment.appendChild(row);
+      slots.push({ row, depth, orders, quantity, price });
+    }
+
+    container.replaceChildren(fragment);
+    return slots;
   }
+
+  // Mutates the fixed set of row slots in place. Never creates, appends,
+  // or removes DOM nodes. Levels beyond the available data or beyond
+  // DEPTH_ROW_COUNT are rendered as empty, zero-width placeholder rows.
+  function updateDepthLadder(slots, levels, maxQuantity) {
+    const availableCount = Array.isArray(levels) ? Math.min(levels.length, DEPTH_ROW_COUNT) : 0;
+
+    for (let i = 0; i < DEPTH_ROW_COUNT; i += 1) {
+      const slot = slots[i];
+
+      if (i < availableCount) {
+        const level = levels[i];
+        const quantity = safeQuantity(level);
+        const widthPercent = quantity > 0
+          ? Math.min(100, Math.max(0, (quantity / maxQuantity) * 100))
+          : 0;
+
+        slot.depth.style.width = `${widthPercent}%`;
+        slot.orders.textContent = formatInteger(level ? level.orders : undefined);
+        slot.quantity.textContent = formatInteger(level ? level.quantity : undefined);
+        slot.price.textContent = formatPrice(level ? level.price : undefined);
+        slot.row.classList.remove("is-empty");
+      } else {
+        slot.depth.style.width = "0%";
+        slot.orders.textContent = "—";
+        slot.quantity.textContent = "—";
+        slot.price.textContent = "—";
+        slot.row.classList.add("is-empty");
+      }
+    }
+  }
+
+  const bidSlots = createDepthLadder(elements.bids, "bid");
+  const askSlots = createDepthLadder(elements.asks, "ask");
 
   function render() {
     renderQueued = false;
@@ -107,8 +172,12 @@
     }`;
     previousPrice = snapshot.lastPrice;
 
-    renderRows(elements.bids, snapshot.bids, "bid");
-    renderRows(elements.asks, snapshot.asks, "ask");
+    const bidLevels = Array.isArray(snapshot.bids) ? snapshot.bids : [];
+    const askLevels = Array.isArray(snapshot.asks) ? snapshot.asks : [];
+    const maxQuantity = computeMaxQuantity(bidLevels, askLevels);
+
+    updateDepthLadder(bidSlots, bidLevels, maxQuantity);
+    updateDepthLadder(askSlots, askLevels, maxQuantity);
 
     const now = performance.now();
     recentTicks.push(now);
