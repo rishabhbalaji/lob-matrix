@@ -14,9 +14,12 @@
         <p class="eyebrow">Market Microstructure Engine</p>
         <h1>LOB MATRIX</h1>
       </div>
-      <div class="connection-block">
-        <span id="connection-indicator" class="status-dot status-connecting"></span>
-        <span id="connection-status">Connecting</span>
+      <div class="topbar-actions">
+        <button id="manage-sources-button" class="sources-button" type="button">Manage sources</button>
+        <div class="connection-block">
+          <span id="connection-indicator" class="status-dot status-connecting"></span>
+          <span id="connection-status">Connecting</span>
+        </div>
       </div>
     </header>
 
@@ -106,6 +109,25 @@
       <span id="feed-rate">Waiting for data</span>
     </footer>
   </main>
+
+  <dialog id="sources-dialog" class="sources-dialog" aria-labelledby="sources-title">
+    <section class="sources-modal">
+      <header class="sources-modal-header">
+        <div>
+          <p class="eyebrow">Server configuration</p>
+          <h2 id="sources-title">Manage data sources</h2>
+        </div>
+        <button id="close-sources-button" class="icon-button" type="button" aria-label="Close source manager">×</button>
+      </header>
+      <p class="sources-intro">
+        This dashboard never accepts or displays broker secrets. Authorized server users receive local setup instructions only.
+      </p>
+      <div id="sources-list" class="sources-list">
+        <p class="sources-loading">Loading source status…</p>
+      </div>
+    </section>
+  </dialog>
+
   <script src="/app.js"></script>
 </body>
 </html>
