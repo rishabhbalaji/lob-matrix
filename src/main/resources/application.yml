@@ -18,6 +18,8 @@ spring:
       enabled: false
 
 lobmatrix:
+  dashboard:
+    mock-feed-enabled: true
   engine:
     version: "0.1.0"
     feed-source: "MOCK" # "MOCK", "ZERODHA", "DHAN"
@@ -27,7 +29,7 @@ lobmatrix:
     models-dir: "data/models"
 
 server:
-  port: 8080
+  port: 9090
 
 logging:
   level:
