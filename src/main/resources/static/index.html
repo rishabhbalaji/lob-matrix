@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d18">
+  <title>LOB Matrix | Live Order Book</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <main class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Market Microstructure Engine</p>
+        <h1>LOB MATRIX</h1>
+      </div>
+      <div class="connection-block">
+        <span id="connection-indicator" class="status-dot status-connecting"></span>
+        <span id="connection-status">Connecting</span>
+      </div>
+    </header>
+
+    <section class="instrument-bar">
+      <div>
+        <p class="label">Instrument</p>
+        <h2 id="symbol">Waiting for feed</h2>
+      </div>
+      <div>
+        <p class="label">Source</p>
+        <p id="source" class="value">—</p>
+      </div>
+      <div>
+        <p class="label">Token</p>
+        <p id="token" class="value">—</p>
+      </div>
+      <div>
+        <p class="label">Last update</p>
+        <p id="last-update" class="value">—</p>
+      </div>
+    </section>
+
+    <section class="metrics-grid">
+      <article class="card hero-card">
+        <p class="label">Last traded price</p>
+        <p id="last-price" class="price">—</p>
+        <p id="price-change" class="change neutral">Awaiting first tick</p>
+      </article>
+      <article class="card">
+        <p class="label">Last traded quantity</p>
+        <p id="ltq" class="metric">—</p>
+      </article>
+      <article class="card">
+        <p class="label">Cumulative volume</p>
+        <p id="volume" class="metric">—</p>
+      </article>
+      <article class="card">
+        <p class="label">Mid price</p>
+        <p id="mid-price" class="metric">—</p>
+      </article>
+      <article class="card">
+        <p class="label">Spread</p>
+        <p id="spread" class="metric">—</p>
+      </article>
+      <article class="card">
+        <p class="label">Book state</p>
+        <p id="book-state" class="metric state">—</p>
+      </article>
+    </section>
+
+    <section class="book-grid">
+      <article class="book-card bids-card">
+        <div class="book-heading">
+          <div>
+            <p class="label">Demand</p>
+            <h2>Bids</h2>
+          </div>
+          <span class="side-badge bid-badge">BUY</span>
+        </div>
+        <div class="book-table">
+          <div class="table-head bid-head">
+            <span>Orders</span><span>Quantity</span><span>Price</span>
+          </div>
+          <div id="bids" class="book-body"></div>
+        </div>
+      </article>
+
+      <article class="book-card asks-card">
+        <div class="book-heading">
+          <div>
+            <p class="label">Supply</p>
+            <h2>Asks</h2>
+          </div>
+          <span class="side-badge ask-badge">SELL</span>
+        </div>
+        <div class="book-table">
+          <div class="table-head ask-head">
+            <span>Price</span><span>Quantity</span><span>Orders</span>
+          </div>
+          <div id="asks" class="book-body"></div>
+        </div>
+      </article>
+    </section>
+
+    <footer>
+      <span>Live native WebSocket stream</span>
+      <span id="feed-rate">Waiting for data</span>
+    </footer>
+  </main>
+  <script src="/app.js"></script>
+</body>
+</html>
