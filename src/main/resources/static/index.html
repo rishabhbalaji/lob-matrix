@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -7,6 +8,7 @@
   <title>LOB Matrix | Live Order Book</title>
   <link rel="stylesheet" href="/styles.css">
 </head>
+
 <body>
   <main class="shell">
     <header class="topbar">
@@ -70,6 +72,68 @@
       </article>
     </section>
 
+    <section class="gauge-grid" aria-label="Live market pressure indicators">
+      <article class="card gauge-card">
+        <div class="gauge-heading">
+          <div>
+            <p class="label">Cumulative depth</p>
+            <h2>Order-book imbalance</h2>
+          </div>
+          <span id="imbalance-direction" class="gauge-direction neutral">Neutral</span>
+        </div>
+        <div class="gauge" role="meter" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0"
+          aria-labelledby="imbalance-title">
+          <svg class="gauge-svg" viewBox="0 0 220 126" aria-hidden="true">
+            <defs>
+              <linearGradient id="imbalance-arc-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ff8375" />
+                <stop offset="50%" stop-color="#8ea0bc" />
+                <stop offset="100%" stop-color="#2fe6b8" />
+              </linearGradient>
+            </defs>
+            <path class="gauge-track" d="M 20 110 A 90 90 0 0 1 200 110" />
+            <path id="imbalance-arc" class="gauge-arc" d="M 110 20 A 90 90 0 0 1 200 110" />
+            <line id="imbalance-needle" class="gauge-needle" x1="110" y1="110" x2="110" y2="20" />
+            <circle class="gauge-pivot" cx="110" cy="110" r="6" />
+          </svg>
+          <p id="imbalance-value" class="gauge-value">0.0%</p>
+          <div class="gauge-scale" aria-hidden="true">
+            <span>-100%</span><span>0%</span><span>+100%</span>
+          </div>
+        </div>
+      </article>
+
+      <article class="card gauge-card">
+        <div class="gauge-heading">
+          <div>
+            <p class="label">Lee-Ready flow</p>
+            <h2>Trade strength</h2>
+          </div>
+          <span id="trade-strength-direction" class="gauge-direction neutral">Neutral</span>
+        </div>
+        <div class="gauge" role="meter" aria-valuemin="-100" aria-valuemax="100" aria-valuenow="0"
+          aria-labelledby="trade-strength-title">
+          <svg class="gauge-svg" viewBox="0 0 220 126" aria-hidden="true">
+            <defs>
+              <linearGradient id="trade-strength-arc-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                <stop offset="0%" stop-color="#ff8375" />
+                <stop offset="50%" stop-color="#8ea0bc" />
+                <stop offset="100%" stop-color="#2fe6b8" />
+              </linearGradient>
+            </defs>
+            <path class="gauge-track" d="M 20 110 A 90 90 0 0 1 200 110" />
+            <path id="trade-strength-arc" class="gauge-arc" d="M 110 20 A 90 90 0 0 1 200 110" />
+            <line id="trade-strength-needle" class="gauge-needle" x1="110" y1="110" x2="110" y2="20" />
+            <circle class="gauge-pivot" cx="110" cy="110" r="6" />
+          </svg>
+          <p id="trade-strength-value" class="gauge-value">0.0%</p>
+          <div class="gauge-scale" aria-hidden="true">
+            <span>-100%</span><span>0%</span><span>+100%</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
     <section class="book-grid">
       <article class="book-card bids-card">
         <div class="book-heading">
@@ -120,7 +184,8 @@
         <button id="close-sources-button" class="icon-button" type="button" aria-label="Close source manager">×</button>
       </header>
       <p class="sources-intro">
-        This dashboard never accepts or displays broker secrets. Authorized server users receive local setup instructions only.
+        This dashboard never accepts or displays broker secrets. Authorized server users receive local setup
+        instructions only.
       </p>
       <div id="sources-list" class="sources-list">
         <p class="sources-loading">Loading source status…</p>
@@ -130,4 +195,5 @@
 
   <script src="/app.js"></script>
 </body>
+
 </html>

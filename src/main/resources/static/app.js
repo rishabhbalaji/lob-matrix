@@ -21,7 +21,15 @@
     manageSourcesButton: document.getElementById("manage-sources-button"),
     sourcesDialog: document.getElementById("sources-dialog"),
     closeSourcesButton: document.getElementById("close-sources-button"),
-    sourcesList: document.getElementById("sources-list")
+    sourcesList: document.getElementById("sources-list"),
+    imbalanceValue: document.getElementById("imbalance-value"),
+    imbalanceDirection: document.getElementById("imbalance-direction"),
+    imbalanceNeedle: document.getElementById("imbalance-needle"),
+    imbalanceArc: document.getElementById("imbalance-arc"),
+    tradeStrengthValue: document.getElementById("trade-strength-value"),
+    tradeStrengthDirection: document.getElementById("trade-strength-direction"),
+    tradeStrengthNeedle: document.getElementById("trade-strength-needle"),
+    tradeStrengthArc: document.getElementById("trade-strength-arc")
   };
 
   let latestSnapshot = null;
@@ -143,6 +151,59 @@
   const bidSlots = createDepthLadder(elements.bids, "bid");
   const askSlots = createDepthLadder(elements.asks, "ask");
 
+  function clampPercent(value) {
+    return Number.isFinite(value) ? Math.min(100, Math.max(-100, value)) : 0;
+  }
+
+  function gaugeDirection(value) {
+    if (value > 0.25) return { label: "Buy pressure", cssClass: "positive" };
+    if (value < -0.25) return { label: "Sell pressure", cssClass: "negative" };
+    return { label: "Neutral", cssClass: "neutral" };
+  }
+
+  // Every SVG gauge is static markup created with the page. Rendering only
+  // updates existing attributes/text, so incoming WebSocket frames never
+  // allocate additional browser DOM nodes or retain chart history.
+  function updateGauge(valueElement, directionElement, needleElement, arcElement, value) {
+    const percent = clampPercent(value);
+    const normalized = (percent + 100) / 200;
+    const magnitude = Math.abs(percent) / 100;
+    const angle = -180 + (normalized * 180);
+    const halfArcLength = 141.375;
+    const direction = gaugeDirection(percent);
+    const arcPath = percent < 0
+      ? "M 110 20 A 90 90 0 0 0 20 110"
+      : "M 110 20 A 90 90 0 0 1 200 110";
+    const angleRadians = angle * (Math.PI / 180);
+    const needleTipX = 110 + (90 * Math.cos(angleRadians));
+    const needleTipY = 110 + (90 * Math.sin(angleRadians));
+
+    valueElement.textContent = `${percent >= 0 ? "+" : ""}${percent.toFixed(1)}%`;
+    directionElement.textContent = direction.label;
+    directionElement.className = `gauge-direction ${direction.cssClass}`;
+    needleElement.setAttribute("x1", "110");
+    needleElement.setAttribute("y1", "110");
+    needleElement.setAttribute("x2", needleTipX.toFixed(3));
+    needleElement.setAttribute("y2", needleTipY.toFixed(3));
+    arcElement.setAttribute("d", arcPath);
+
+    /*
+     * The active arc starts at the neutral midpoint rather than at -100%.
+     * A small imbalance therefore produces a short directional segment,
+     * accurately communicating magnitude instead of a misleading half-full
+     * gauge. Negative values fill leftward; positive values fill rightward.
+     */
+    arcElement.classList.toggle("gauge-negative", percent < 0);
+    arcElement.classList.toggle("gauge-positive", percent > 0);
+    arcElement.style.strokeDasharray = `${halfArcLength * magnitude} ${282.75}`;
+    arcElement.style.strokeDashoffset = "0";
+
+    needleElement.parentElement.parentElement.parentElement.setAttribute(
+      "aria-valuenow",
+      percent.toFixed(1)
+    );
+  }
+
   function render() {
     renderQueued = false;
     const snapshot = latestSnapshot;
@@ -178,6 +239,21 @@
 
     updateDepthLadder(bidSlots, bidLevels, maxQuantity);
     updateDepthLadder(askSlots, askLevels, maxQuantity);
+
+    updateGauge(
+      elements.imbalanceValue,
+      elements.imbalanceDirection,
+      elements.imbalanceNeedle,
+      elements.imbalanceArc,
+      snapshot.depthImbalancePercent
+    );
+    updateGauge(
+      elements.tradeStrengthValue,
+      elements.tradeStrengthDirection,
+      elements.tradeStrengthNeedle,
+      elements.tradeStrengthArc,
+      snapshot.tradeStrengthPercent
+    );
 
     const now = performance.now();
     recentTicks.push(now);

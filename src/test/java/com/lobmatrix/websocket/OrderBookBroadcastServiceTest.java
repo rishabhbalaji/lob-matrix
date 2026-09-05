@@ -20,7 +20,12 @@ class OrderBookBroadcastServiceTest {
     void dispatchSendsSerializedSnapshotToOpenSession() throws IOException {
         OrderBookWebSocketHandler handler = new OrderBookWebSocketHandler();
         ObjectMapper objectMapper = new ObjectMapper();
-        OrderBookBroadcastService service = new OrderBookBroadcastService(handler, objectMapper);
+        LiveDashboardFeatureService featureService = new LiveDashboardFeatureService();
+        OrderBookBroadcastService service = new OrderBookBroadcastService(
+                handler,
+                objectMapper,
+                featureService
+        );
 
         WebSocketSession session = mock(WebSocketSession.class);
         when(session.isOpen()).thenReturn(true);
@@ -28,15 +33,25 @@ class OrderBookBroadcastServiceTest {
 
         service.dispatch(snapshot());
 
+        CanonicalMarketSnapshot expectedSnapshot = snapshot();
+        LiveDashboardFeatureService.LiveDashboardFeatures expectedFeatures =
+                featureService.calculate(expectedSnapshot);
+
         verify(session).sendMessage(new TextMessage(
-                objectMapper.writeValueAsString(OrderBookSnapshotMessage.from(snapshot()))
+                objectMapper.writeValueAsString(
+                        OrderBookSnapshotMessage.from(expectedSnapshot, expectedFeatures)
+                )
         ));
     }
 
     @Test
     void dispatchRemovesClosedSessionWithoutAttemptingDelivery() {
         OrderBookWebSocketHandler handler = new OrderBookWebSocketHandler();
-        OrderBookBroadcastService service = new OrderBookBroadcastService(handler, new ObjectMapper());
+        OrderBookBroadcastService service = new OrderBookBroadcastService(
+                handler,
+                new ObjectMapper(),
+                new LiveDashboardFeatureService()
+        );
 
         WebSocketSession session = mock(WebSocketSession.class);
         when(session.isOpen()).thenReturn(false);
