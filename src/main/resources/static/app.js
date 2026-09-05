@@ -29,7 +29,14 @@
     tradeStrengthValue: document.getElementById("trade-strength-value"),
     tradeStrengthDirection: document.getElementById("trade-strength-direction"),
     tradeStrengthNeedle: document.getElementById("trade-strength-needle"),
-    tradeStrengthArc: document.getElementById("trade-strength-arc")
+    tradeStrengthArc: document.getElementById("trade-strength-arc"),
+    chart: document.getElementById("price-imbalance-chart"),
+    chartSampleCount: document.getElementById("chart-sample-count"),
+    probabilityUp: document.getElementById("probability-up"),
+    probabilityNeutral: document.getElementById("probability-neutral"),
+    probabilityDown: document.getElementById("probability-down"),
+    predictionMode: document.getElementById("prediction-mode"),
+    predictionDetail: document.getElementById("prediction-detail")
   };
 
   let latestSnapshot = null;
@@ -44,6 +51,12 @@
   });
 
   const integerFormatter = new Intl.NumberFormat();
+
+  const CHART_CAPACITY = 300;
+  const chartPrices = new Float64Array(CHART_CAPACITY);
+  const chartImbalances = new Float64Array(CHART_CAPACITY);
+  let chartStart = 0;
+  let chartSize = 0;
 
   function setConnection(status, cssClass) {
     elements.connectionStatus.textContent = status;
@@ -204,6 +217,151 @@
     );
   }
 
+  function addChartSample(price, imbalance) {
+    if (!Number.isFinite(price) || !Number.isFinite(imbalance)) return;
+
+    const writeIndex = (chartStart + chartSize) % CHART_CAPACITY;
+    chartPrices[writeIndex] = price;
+    chartImbalances[writeIndex] = clampPercent(imbalance);
+
+    if (chartSize < CHART_CAPACITY) {
+      chartSize += 1;
+    } else {
+      chartStart = (chartStart + 1) % CHART_CAPACITY;
+    }
+  }
+
+  function chartValue(array, index) {
+    return array[(chartStart + index) % CHART_CAPACITY];
+  }
+
+  function drawChart() {
+    const canvas = elements.chart;
+    const context = canvas.getContext("2d");
+    const cssWidth = canvas.clientWidth;
+    const cssHeight = canvas.clientHeight;
+
+    if (cssWidth <= 0 || cssHeight <= 0) return;
+
+    const pixelRatio = window.devicePixelRatio || 1;
+    const targetWidth = Math.round(cssWidth * pixelRatio);
+    const targetHeight = Math.round(cssHeight * pixelRatio);
+
+    if (canvas.width !== targetWidth || canvas.height !== targetHeight) {
+      canvas.width = targetWidth;
+      canvas.height = targetHeight;
+    }
+
+    context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+    context.clearRect(0, 0, cssWidth, cssHeight);
+
+    const padding = { top: 18, right: 48, bottom: 30, left: 52 };
+    const plotWidth = cssWidth - padding.left - padding.right;
+    const plotHeight = cssHeight - padding.top - padding.bottom;
+
+    context.strokeStyle = "rgba(142, 160, 188, 0.15)";
+    context.lineWidth = 1;
+
+    for (let row = 0; row <= 4; row += 1) {
+      const y = padding.top + ((plotHeight * row) / 4);
+      context.beginPath();
+      context.moveTo(padding.left, y);
+      context.lineTo(padding.left + plotWidth, y);
+      context.stroke();
+    }
+
+    context.font = "11px Inter, ui-sans-serif, system-ui, sans-serif";
+    context.fillStyle = "#8ea0bc";
+    context.textAlign = "right";
+    context.fillText("+100%", cssWidth - 6, padding.top + 4);
+    context.fillText("0%", cssWidth - 6, padding.top + (plotHeight / 2) + 4);
+    context.fillText("-100%", cssWidth - 6, padding.top + plotHeight + 4);
+
+    if (chartSize < 2) {
+      context.textAlign = "center";
+      context.fillStyle = "#8ea0bc";
+      context.fillText("Waiting for live samples", cssWidth / 2, cssHeight / 2);
+      elements.chartSampleCount.textContent = `${chartSize} / ${CHART_CAPACITY} samples`;
+      return;
+    }
+
+    let minimumPrice = chartValue(chartPrices, 0);
+    let maximumPrice = minimumPrice;
+    for (let i = 1; i < chartSize; i += 1) {
+      const price = chartValue(chartPrices, i);
+      minimumPrice = Math.min(minimumPrice, price);
+      maximumPrice = Math.max(maximumPrice, price);
+    }
+
+    const priceRange = Math.max(0.01, maximumPrice - minimumPrice);
+    const pricePadding = Math.max(priceRange * 0.12, 0.01);
+    minimumPrice -= pricePadding;
+    maximumPrice += pricePadding;
+
+    const xFor = index => padding.left + ((index / (CHART_CAPACITY - 1)) * plotWidth);
+    const priceYFor = price =>
+      padding.top + ((maximumPrice - price) / (maximumPrice - minimumPrice)) * plotHeight;
+    const imbalanceYFor = imbalance =>
+      padding.top + ((100 - imbalance) / 200) * plotHeight;
+
+    context.strokeStyle = "rgba(47, 230, 184, 0.9)";
+    context.lineWidth = 2;
+    context.beginPath();
+    for (let i = 0; i < chartSize; i += 1) {
+      const x = xFor(CHART_CAPACITY - chartSize + i);
+      const y = priceYFor(chartValue(chartPrices, i));
+      if (i === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+
+    context.strokeStyle = "rgba(255, 202, 106, 0.9)";
+    context.lineWidth = 1.8;
+    context.beginPath();
+    for (let i = 0; i < chartSize; i += 1) {
+      const x = xFor(CHART_CAPACITY - chartSize + i);
+      const y = imbalanceYFor(chartValue(chartImbalances, i));
+      if (i === 0) context.moveTo(x, y);
+      else context.lineTo(x, y);
+    }
+    context.stroke();
+
+    context.textAlign = "left";
+    context.fillStyle = "#2fe6b8";
+    context.fillText(formatPrice(maximumPrice), padding.left, 12);
+    context.fillStyle = "#8ea0bc";
+    context.fillText(formatPrice(minimumPrice), padding.left, cssHeight - 8);
+    elements.chartSampleCount.textContent = `${chartSize} / ${CHART_CAPACITY} samples`;
+  }
+
+  function updateForecastCards(snapshot) {
+    const safePercent = value => Number.isFinite(value) ? Math.min(100, Math.max(0, value)) : 0;
+    const mode = snapshot.predictionMode === "MODE_AI_PREDICTIVE_ACTIVE"
+      ? "AI predictive"
+      : "Baseline";
+
+    elements.probabilityUp.textContent = `${safePercent(snapshot.probabilityUpPercent).toFixed(1)}%`;
+    elements.probabilityNeutral.textContent =
+      `${safePercent(snapshot.probabilityNeutralPercent).toFixed(1)}%`;
+    elements.probabilityDown.textContent =
+      `${safePercent(snapshot.probabilityDownPercent).toFixed(1)}%`;
+
+    elements.predictionMode.textContent = mode;
+    elements.predictionMode.className = `prediction-mode ${
+      snapshot.predictionMode === "MODE_AI_PREDICTIVE_ACTIVE"
+        ? "mode-ai"
+        : "mode-baseline"
+    }`;
+
+    elements.predictionDetail.textContent = snapshot.calibratedProbabilities
+      ? "Verified ONNX model probabilities"
+      : `Baseline directional score: ${
+          Number.isFinite(snapshot.predictionScorePercent)
+            ? `${snapshot.predictionScorePercent >= 0 ? "+" : ""}${snapshot.predictionScorePercent.toFixed(1)}%`
+            : "0.0%"
+        } (not calibrated probabilities)`;
+  }
+
   function render() {
     renderQueued = false;
     const snapshot = latestSnapshot;
@@ -254,6 +412,10 @@
       elements.tradeStrengthArc,
       snapshot.tradeStrengthPercent
     );
+
+    addChartSample(snapshot.lastPrice, snapshot.depthImbalancePercent);
+    drawChart();
+    updateForecastCards(snapshot);
 
     const now = performance.now();
     recentTicks.push(now);

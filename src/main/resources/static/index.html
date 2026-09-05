@@ -72,6 +72,53 @@
       </article>
     </section>
 
+    <section class="forecast-grid" aria-label="Five-second return forecast">
+      <article class="chart-card">
+        <div class="chart-heading">
+          <div>
+            <p class="label">Rolling live signal</p>
+            <h2>Price vs. imbalance</h2>
+          </div>
+          <span id="chart-sample-count" class="chart-status">0 / 300 samples</span>
+        </div>
+        <div class="chart-legend" aria-hidden="true">
+          <span class="legend-item legend-price">Price</span>
+          <span class="legend-item legend-imbalance">Depth imbalance</span>
+        </div>
+        <div class="chart-shell">
+          <canvas id="price-imbalance-chart" width="900" height="320"
+                  aria-label="Rolling chart of last traded price and depth imbalance percentage">
+            Price versus imbalance chart requires Canvas support.
+          </canvas>
+        </div>
+      </article>
+
+      <section class="forecast-cards" aria-label="Five-second forecast probabilities">
+        <div class="forecast-header">
+          <div>
+            <p class="label">Return forecast</p>
+            <h2>5-second direction</h2>
+          </div>
+          <span id="prediction-mode" class="prediction-mode mode-baseline">Baseline</span>
+        </div>
+        <p id="prediction-detail" class="prediction-detail">
+          Awaiting live forecast
+        </p>
+        <article class="forecast-card forecast-up">
+          <p class="label">5s UP probability</p>
+          <p id="probability-up" class="forecast-value">—</p>
+        </article>
+        <article class="forecast-card forecast-neutral">
+          <p class="label">5s Neutral probability</p>
+          <p id="probability-neutral" class="forecast-value">—</p>
+        </article>
+        <article class="forecast-card forecast-down">
+          <p class="label">5s Down probability</p>
+          <p id="probability-down" class="forecast-value">—</p>
+        </article>
+      </section>
+    </section>
+
     <section class="gauge-grid" aria-label="Live market pressure indicators">
       <article class="card gauge-card">
         <div class="gauge-heading">
