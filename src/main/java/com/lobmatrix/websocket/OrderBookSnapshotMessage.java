@@ -27,6 +27,12 @@ public record OrderBookSnapshotMessage(
         String bookState,
         double depthImbalancePercent,
         double tradeStrengthPercent,
+        String predictionMode,
+        double probabilityDownPercent,
+        double probabilityNeutralPercent,
+        double probabilityUpPercent,
+        double predictionScorePercent,
+        boolean calibratedProbabilities,
         List<OrderBookLevel> bids,
         List<OrderBookLevel> asks
 ) {
@@ -38,6 +44,20 @@ public record OrderBookSnapshotMessage(
             CanonicalMarketSnapshot snapshot,
             LiveDashboardFeatureService.LiveDashboardFeatures features
     ) {
+        return from(
+                snapshot,
+                features,
+                LiveDashboardPredictionService.LiveDashboardForecast.neutral(
+                        com.lobmatrix.inference.InferenceMode.MODE_BASELINE_ACTIVE
+                )
+        );
+    }
+
+    public static OrderBookSnapshotMessage from(
+            CanonicalMarketSnapshot snapshot,
+            LiveDashboardFeatureService.LiveDashboardFeatures features,
+            LiveDashboardPredictionService.LiveDashboardForecast forecast
+    ) {
         double[] bidPrices = snapshot.bidPrices();
         long[] bidQuantities = snapshot.bidQuantities();
         int[] bidOrders = snapshot.bidOrders();
@@ -47,6 +67,12 @@ public record OrderBookSnapshotMessage(
 
         LiveDashboardFeatureService.LiveDashboardFeatures safeFeatures =
                 features != null ? features : LiveDashboardFeatureService.LiveDashboardFeatures.neutral();
+        LiveDashboardPredictionService.LiveDashboardForecast safeForecast =
+                forecast != null
+                        ? forecast
+                        : LiveDashboardPredictionService.LiveDashboardForecast.neutral(
+                                com.lobmatrix.inference.InferenceMode.MODE_BASELINE_ACTIVE
+                        );
 
         return new OrderBookSnapshotMessage(
                 "orderbook_snapshot",
@@ -63,6 +89,12 @@ public record OrderBookSnapshotMessage(
                 snapshot.stateTag().name(),
                 safeFeatures.depthImbalancePercent(),
                 safeFeatures.tradeStrengthPercent(),
+                safeForecast.predictionMode(),
+                safeForecast.probabilityDownPercent(),
+                safeForecast.probabilityNeutralPercent(),
+                safeForecast.probabilityUpPercent(),
+                safeForecast.predictionScorePercent(),
+                safeForecast.calibratedProbabilities(),
                 levels(bidPrices, bidQuantities, bidOrders),
                 levels(askPrices, askQuantities, askOrders)
         );

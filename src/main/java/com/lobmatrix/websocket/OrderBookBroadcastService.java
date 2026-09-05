@@ -23,15 +23,18 @@ public class OrderBookBroadcastService {
     private final OrderBookWebSocketHandler handler;
     private final ObjectMapper objectMapper;
     private final LiveDashboardFeatureService liveDashboardFeatureService;
+    private final LiveDashboardPredictionService liveDashboardPredictionService;
 
     public OrderBookBroadcastService(
             OrderBookWebSocketHandler handler,
             ObjectMapper objectMapper,
-            LiveDashboardFeatureService liveDashboardFeatureService
+            LiveDashboardFeatureService liveDashboardFeatureService,
+            LiveDashboardPredictionService liveDashboardPredictionService
     ) {
         this.handler = handler;
         this.objectMapper = objectMapper;
         this.liveDashboardFeatureService = liveDashboardFeatureService;
+        this.liveDashboardPredictionService = liveDashboardPredictionService;
     }
 
     void dispatch(CanonicalMarketSnapshot snapshot) {
@@ -43,7 +46,11 @@ public class OrderBookBroadcastService {
         try {
             LiveDashboardFeatureService.LiveDashboardFeatures features =
                     liveDashboardFeatureService.calculate(snapshot);
-            payload = objectMapper.writeValueAsString(OrderBookSnapshotMessage.from(snapshot, features));
+            LiveDashboardPredictionService.LiveDashboardForecast forecast =
+                    liveDashboardPredictionService.calculate(snapshot);
+            payload = objectMapper.writeValueAsString(
+                    OrderBookSnapshotMessage.from(snapshot, features, forecast)
+            );
         } catch (JsonProcessingException exception) {
             log.error("Unable to serialize order book snapshot for token {}", snapshot.instrumentToken(), exception);
             return;

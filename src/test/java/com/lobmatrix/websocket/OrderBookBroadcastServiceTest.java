@@ -21,10 +21,12 @@ class OrderBookBroadcastServiceTest {
         OrderBookWebSocketHandler handler = new OrderBookWebSocketHandler();
         ObjectMapper objectMapper = new ObjectMapper();
         LiveDashboardFeatureService featureService = new LiveDashboardFeatureService();
+        LiveDashboardPredictionService predictionService = new LiveDashboardPredictionService();
         OrderBookBroadcastService service = new OrderBookBroadcastService(
                 handler,
                 objectMapper,
-                featureService
+                featureService,
+                predictionService
         );
 
         WebSocketSession session = mock(WebSocketSession.class);
@@ -36,10 +38,16 @@ class OrderBookBroadcastServiceTest {
         CanonicalMarketSnapshot expectedSnapshot = snapshot();
         LiveDashboardFeatureService.LiveDashboardFeatures expectedFeatures =
                 featureService.calculate(expectedSnapshot);
+        LiveDashboardPredictionService.LiveDashboardForecast expectedForecast =
+                predictionService.calculate(expectedSnapshot);
 
         verify(session).sendMessage(new TextMessage(
                 objectMapper.writeValueAsString(
-                        OrderBookSnapshotMessage.from(expectedSnapshot, expectedFeatures)
+                        OrderBookSnapshotMessage.from(
+                                expectedSnapshot,
+                                expectedFeatures,
+                                expectedForecast
+                        )
                 )
         ));
     }
@@ -50,7 +58,8 @@ class OrderBookBroadcastServiceTest {
         OrderBookBroadcastService service = new OrderBookBroadcastService(
                 handler,
                 new ObjectMapper(),
-                new LiveDashboardFeatureService()
+                new LiveDashboardFeatureService(),
+                new LiveDashboardPredictionService()
         );
 
         WebSocketSession session = mock(WebSocketSession.class);
