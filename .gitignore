@@ -35,3 +35,18 @@ Thumbs.db
 # Local environment & secrets
 env.sh
 .env
+
+# Local M6 host diagnostics, deployment snapshots, and environment secrets.
+M6P1S1_HOST_PROFILE.md
+M6P1S1_TIME_SERVICE_INSPECTION.md
+M6P1S1_POST_INSTALL_HEALTHCHECK.txt
+M6P1S1_ORDERBOOK_CPU_DIAGNOSTIC.txt
+M6P1S1_INSTALLED_CONFIG_EXPORT.md
+M6P1S1_PREDICTION_CADENCE_EXPORT.md
+M6P1S1_*_EXPORT.md
+M6P1S1_*_DIAGNOSTIC.txt
+M6P1S1_*_HEALTHCHECK.txt
+M6_DEPLOYMENT_SNAPSHOT.md
+install_m6p1s1_systemd_chrony.sh
+*.env
+*.env.local

@@ -1,0 +1,49 @@
+[Unit]
+Description=LOB Matrix Order Book Engine
+Documentation=file:{{APP_DIR}}/README.md
+Wants=network-online.target
+After=network-online.target chrony.service
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User={{SERVICE_USER}}
+Group={{SERVICE_GROUP}}
+WorkingDirectory={{APP_DIR}}
+EnvironmentFile={{ENV_FILE}}
+Environment=JAVA_HOME={{JAVA_HOME}}
+Environment=TZ=UTC
+ExecStart={{JAVA_BIN}} -Xms512m -Xmx1536m -XX:+UseG1GC -XX:MaxGCPauseMillis=5 -jar {{APP_JAR}} --spring.main.banner-mode=off
+
+Restart=always
+RestartSec=10
+TimeoutStopSec=45
+SuccessExitStatus=143
+
+UMask=0077
+NoNewPrivileges=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectSystem=full
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectHostname=true
+ProtectClock=true
+LockPersonality=true
+RestrictSUIDSGID=true
+RestrictRealtime=true
+RestrictNamespaces=true
+CapabilityBoundingSet=
+SystemCallArchitectures=native
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @swap
+
+ReadWritePaths={{DATA_DIR}} {{RUNTIME_DIR}}
+
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=orderbook-engine
+
+[Install]
+WantedBy=multi-user.target
