@@ -456,3 +456,16 @@ footer {
     flex-direction: column;
   }
 }
+
+/* M5P3S1: Live Level-20 depth ladder support. */
+.depth {
+  transition: width 90ms linear;
+}
+
+.book-row.is-empty .depth {
+  transition: none;
+}
+
+.book-row.is-empty > span {
+  color: var(--muted);
+}
